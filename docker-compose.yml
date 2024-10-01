@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  django:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    command: gunicorn leadpages_etl.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ./app:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+
+  celery:
+    build:
+      context: .
+      dockerfile: celery/Dockerfile
+    command: celery -A leadpages_etl worker --loglevel=info
+    volumes:
+      - ./app:/app
+    depends_on:
+      - django
+      - redis
+
+  redis:
+    image: redis:alpine
