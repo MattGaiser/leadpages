@@ -10,4 +10,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY ../app/ /app/
 
-CMD ["celery", "-A", "leadpages_etl", "worker", "--loglevel=info"]
+CMD ["celery", "-A", "leadpages_etl", "worker", "--loglevel=info", "--concurrency=4"]
