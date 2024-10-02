@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from .tasks import fetch_transform_post_animals, AnimalApiClient
+from .tasks import fetch_transform_post_animals
 
 
 def trigger_task(request):

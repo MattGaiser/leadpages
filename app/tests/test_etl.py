@@ -1,10 +1,9 @@
 import pytest
-import requests
 import vcr
 from datetime import datetime
 import pytz
 
-from app.extractor.tasks import AnimalApiClient, AnimalRaw, AnimalTransformer, fetch_transform_post_animals
+from app.extractor.tasks import AnimalApiClient, AnimalRaw, AnimalTransformer
 
 
 @pytest.fixture

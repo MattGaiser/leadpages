@@ -10,7 +10,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
-from app.extractor.client import AnimalApiClient
+from app.extractor.client import AnimalApiClient, DEFAULT_BASE_URL
 from app.extractor.models import AnimalID, AnimalRaw, Animal
 
 logger = get_task_logger(__name__)
@@ -122,7 +122,7 @@ def process_animal_batch(self, animal_ids, base_url, audit_mode, audit_dir):
 
 
 @shared_task(bind=True)
-def fetch_transform_post_animals(self, base_url, audit_mode, audit_dir):
+def fetch_transform_post_animals(self, base_url=DEFAULT_BASE_URL, audit_mode=False, audit_dir="audit_dir"):
     client = AnimalApiClient(base_url=base_url, audit_mode=audit_mode, audit_dir=audit_dir)
     extractor = AnimalExtractor(client)
 
