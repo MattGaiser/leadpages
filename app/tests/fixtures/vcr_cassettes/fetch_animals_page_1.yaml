@@ -1,0 +1,30 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.3
+    method: GET
+    uri: http://host.docker.internal:3123/animals/v1/animals?page=1
+  response:
+    body:
+      string: '{"page":1,"total_pages":575,"items":[{"id":0,"name":"Mosquito","born_at":null},{"id":1,"name":"Cobra","born_at":1444102907778},{"id":2,"name":"Hawk","born_at":null},{"id":3,"name":"Jay","born_at":null},{"id":4,"name":"Camel","born_at":null},{"id":5,"name":"Dove","born_at":null},{"id":6,"name":"Wolf","born_at":null},{"id":7,"name":"Goldfinch","born_at":null},{"id":8,"name":"Stingray","born_at":null},{"id":9,"name":"Magpie","born_at":null}]}'
+    headers:
+      content-length:
+      - '443'
+      content-type:
+      - application/json
+      date:
+      - Wed, 02 Oct 2024 05:18:24 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1

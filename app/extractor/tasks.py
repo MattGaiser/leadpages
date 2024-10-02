@@ -1,72 +1,19 @@
+import uuid
+from pathlib import Path
 import requests
 from celery import shared_task, group
 from celery.utils.log import get_task_logger
 from datetime import datetime
 import pytz
-from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
+from app.extractor.client import AnimalApiClient
+from app.extractor.models import AnimalID, AnimalRaw, Animal
+
 logger = get_task_logger(__name__)
-
-ANIMALS_API_URL = "http://host.docker.internal:3123/animals/v1/animals"
-ANIMALS_HOME_URL = "http://host.docker.internal:3123/animals/v1/home"
-
-
-class AnimalID(BaseModel):
-    id: int
-
-    class Config:
-        allow_mutation = True
-
-
-class AnimalRaw(BaseModel):
-    id: int
-    name: str
-    born_at: Optional[int] = None
-    friends: Optional[str] = None
-
-    class Config:
-        allow_mutation = True
-
-
-class Animal(BaseModel):
-    id: int
-    name: str
-    born_at: Optional[str] = None
-    friends: List[str] = []
-
-    class Config:
-        allow_mutation = True
-
-
-class AnimalApiClient:
-    def __init__(self, base_url):
-        self.base_url = base_url
-
-    def fetch_animals(self, page):
-        response = requests.get(f"{self.base_url}?page={page}")
-        response.raise_for_status()
-        return response.json()
-
-    def fetch_total_pages(self):
-        response = requests.get(f"{self.base_url}?page=1")
-        response.raise_for_status()
-        data = response.json()
-        return data.get('total_pages')
-
-    def fetch_animal_data(self, animal_id):
-        response = requests.get(f"{self.base_url}/{animal_id}")
-        response.raise_for_status()
-        return response.json()
-
-    def post_animal_batch(self, animals):
-        response = requests.post(ANIMALS_HOME_URL, json=animals)
-        response.raise_for_status()
-        return response
-
 
 class AnimalExtractor:
     def __init__(self, client: AnimalApiClient):
@@ -118,9 +65,21 @@ class AnimalTransformer:
 
 class AnimalLoader:
     @staticmethod
-    def post_batches(client: AnimalApiClient, animals: List[dict]):
+    def post_batches(client: 'AnimalApiClient', animals: List[dict]):
+        if client.audit_mode:
+            Path(client.audit_dir).mkdir(parents=True, exist_ok=True)
+
         for i in range(0, len(animals), 100):
             batch = animals[i:i + 100]
+
+            if client.audit_mode:
+                ids = [animal['id'] for animal in batch]
+                file_name = f'batch_{uuid.uuid4()}.json'
+                file_path = Path(client.audit_dir) / file_name
+
+                with open(file_path, 'w') as f:
+                    json.dump(ids, f)
+
             retry_api_call(client.post_animal_batch, batch, max_retries=3, delay=5)
 
 
@@ -139,8 +98,8 @@ def retry_api_call(api_call_func, *args, max_retries=3, delay=5, **kwargs):
 
 
 @shared_task(bind=True)
-def process_animal_batch(self, animal_ids):
-    client = AnimalApiClient(ANIMALS_API_URL)
+def process_animal_batch(self, animal_ids, base_url, audit_mode, audit_dir):
+    client = AnimalApiClient(base_url=base_url, audit_mode=audit_mode, audit_dir=audit_dir)
     transformer = AnimalTransformer()
     loader = AnimalLoader()
 
@@ -163,8 +122,8 @@ def process_animal_batch(self, animal_ids):
 
 
 @shared_task(bind=True)
-def fetch_transform_post_animals(self):
-    client = AnimalApiClient(ANIMALS_API_URL)
+def fetch_transform_post_animals(self, base_url, audit_mode, audit_dir):
+    client = AnimalApiClient(base_url=base_url, audit_mode=audit_mode, audit_dir=audit_dir)
     extractor = AnimalExtractor(client)
 
     total_pages = client.fetch_total_pages()
@@ -179,6 +138,6 @@ def fetch_transform_post_animals(self):
 
         animal_ids_dict = [animal_id.dict() for animal_id in animal_ids]
 
-        sub_tasks.append(process_animal_batch.s(animal_ids_dict))
+        sub_tasks.append(process_animal_batch.s(animal_ids_dict, base_url, audit_mode, audit_dir))
 
     group(sub_tasks).apply_async()

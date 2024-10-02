@@ -15,8 +15,8 @@ services:
 
   celery:
     build:
-      context: .
-      dockerfile: celery/Dockerfile
+      context: ./app
+      dockerfile: Dockerfile
     command: celery -A leadpages_etl worker --loglevel=info --concurrency=4
     volumes:
       - ./app:/app
@@ -26,3 +26,18 @@ services:
 
   redis:
     image: redis:alpine
+
+  tests:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: etl_tests
+    volumes:
+      - ./app:/app
+    depends_on:
+      - django
+      - redis
+      - celery
+    environment:
+      - DJANGO_SETTINGS_MODULE=leadpages_etl.settings
+    command: pytest --disable-warnings
