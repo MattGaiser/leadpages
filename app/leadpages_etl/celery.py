@@ -8,5 +8,4 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "leadpages_etl.settings")
 
 app = Celery("leadpages_etl")
 app.config_from_object("django.conf:settings", namespace="CELERY")
-
-app.autodiscover_tasks()
+app.autodiscover_tasks(["extractor.tasks"])

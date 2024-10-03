@@ -8,8 +8,9 @@ from typing import List
 
 import pytz
 import requests
-from celery import group, shared_task
 from celery.utils.log import get_task_logger
+
+from celery import group, shared_task
 
 from .client import DEFAULT_BASE_URL, AnimalApiClient
 from .models import Animal, AnimalID, AnimalRaw
@@ -144,7 +145,9 @@ def process_animal_batch(self, animal_ids, base_url, audit_mode, audit_dir):
                 detailed_raw_animals.append(AnimalRaw(**detailed_data))
 
     transformed_animals = transformer.transform_all(detailed_raw_animals)
-    all_transformed_animals.extend([animal.dict() for animal in transformed_animals])
+    all_transformed_animals.extend(
+        [animal.model_dump() for animal in transformed_animals]
+    )
 
     loader.post_batches(client, all_transformed_animals)
 
@@ -172,7 +175,7 @@ def fetch_transform_post_animals(
             start_page=page, num_pages=batch_size
         )
 
-        animal_ids_dict = [animal_id.dict() for animal_id in animal_ids]
+        animal_ids_dict = [animal_id.model_dump() for animal_id in animal_ids]
 
         sub_tasks.append(
             process_animal_batch.s(animal_ids_dict, base_url, audit_mode, audit_dir)

@@ -13,6 +13,7 @@ def api_client():
 
 @pytest.mark.django_db
 def test_trigger_task_and_task_execution(api_client, tmp_path):
+    """Verifies that the trigger works to start the task"""
     url = reverse("trigger_task")
     full_url = f"http://testserver{url}"
     response = api_client.get(full_url)

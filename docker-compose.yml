@@ -40,4 +40,4 @@ services:
       - celery
     environment:
       - DJANGO_SETTINGS_MODULE=leadpages_etl.settings
-    command: pytest --disable-warnings
+    command: pytest
