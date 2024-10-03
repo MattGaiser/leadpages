@@ -6,8 +6,15 @@ DEFAULT_BASE_URL = "http://host.docker.internal:3123"
 
 
 class AnimalApiClient:
-    def __init__(self, base_url="http://host.docker.internal:3123", audit_mode: bool = False,
-                 audit_dir: str = 'audit_directory'):
+    """API client that has functions allowing interaction with the API. Has a configuratble base URL as well as
+    audit capabilities."""
+
+    def __init__(
+        self,
+        base_url="http://host.docker.internal:3123",
+        audit_mode: bool = False,
+        audit_dir: str = "audit_directory",
+    ):
         self.base_url = base_url
         self.audit_mode = audit_mode
         self.audit_dir = audit_dir
@@ -21,7 +28,7 @@ class AnimalApiClient:
         response = requests.get(f"{self.base_url}{ANIMALS_API_URL}?page=1")
         response.raise_for_status()
         data = response.json()
-        return data.get('total_pages')
+        return data.get("total_pages")
 
     def fetch_animal_data(self, animal_id):
         response = requests.get(f"{self.base_url}{ANIMALS_API_URL}/{animal_id}")
